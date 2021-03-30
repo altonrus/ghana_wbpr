@@ -1,8 +1,0 @@
-"0","train <- fread(""./data/2020-01 analysis/CapacityTrainingTrain20191223.csv"")
-"
-"1","'.' is not recognized as an internal or external command,
-"
-"1","operable program or batch file.
-"
-"2","'(./data/2020-01 analysis/CapacityTrainingTrain20191223.csv) > C:\Users\alton\AppData\Local\Temp\Rtmp2DI3fj\file55bc1aec9b5' execution failed with error code 1"
-"2","File 'C:\Users\alton\AppData\Local\Temp\Rtmp2DI3fj\file55bc1aec9b5' has size 0. Returning a NULL data.table."
