@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1607874573065.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "79|21|200|0|\n",
+    "hash" : "4016506093",
+    "id" : "A4F821A",
+    "lastKnownWriteTime" : 1611680306,
+    "last_content_update" : 1611680306730,
+    "path" : "G:/My Drive/Projects/ghana_hea/manuscript/ghana_hea.Rmd",
+    "project_path" : "manuscript/ghana_hea.Rmd",
+    "properties" : {
+        "cursorPosition" : "762,61",
+        "last_setup_crc32" : "",
+        "scrollLine" : "725",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

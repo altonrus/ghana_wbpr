@@ -1,0 +1,216 @@
+---
+title: "Untitled"
+output: html_document
+---
+```{r setup, include=FALSE}
+library(ggplot2)
+library(data.table)
+library(scales)
+#library(gridExtra)
+library(flextable)
+library(ftExtra)
+library(officedown)
+library(officer)
+#library(knitr)
+theme_set(theme_bw())
+library(readxl)
+```
+
+```{r read_format_data, include=FALSE}
+
+#read in parameter tables
+#all_cause_mort <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "All_cause_mort"))
+dt_transitions <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "Markov_probs"))
+dt_microcost_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "Microcost_params"))
+dt_riskmod_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "riskmod_params"))
+dt_daly_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "daly_params"))
+
+#read in results
+dt_bc_outcomes <- fread("../results/BC_outcomes.csv")
+dt_bc_costs <- fread("../results/BC_costs.csv")
+dt_bc_dalys <- fread("../results/BC_dalys.csv")
+dt_PSA_microcost <- fread("../results/PSA_microcost.csv")
+dt_PSA_params <- fread("../results/PSA_params.csv")
+dt_psa_costs <- fread("../results/PSA_costs.csv")
+dt_psa_dalys <- fread("../results/PSA_dalys.csv")
+dt_psa_outcomes <- fread("../results/PSA_outcomes.csv")
+dt_univ <- fread("../results/univ_sens_analysis.csv")
+
+
+#Results table
+
+ae_abbrevs <- c("sep", "mal", "ftr", "syp", "hbv", "hcv", "hiv")
+
+
+dt_bc_outcomes_count <- dt_bc_outcomes[ , lapply(.SD, comma)]
+dt_bc_outcomes_dollar <- dt_bc_outcomes[ , lapply(.SD, dollar)]
+dt_bc_outcomes_number <- dt_bc_outcomes[ , lapply(.SD, comma, accuracy = .01)]
+
+
+dt_range_count <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          comma(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          comma(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")
+                            )]
+
+dt_range_number <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          comma(min(quantile(x, probs = c(0.025, 0.975))), 
+                                accuracy = .01),
+                          " – ",
+                          comma(max(quantile(x, probs = c(0.025, 0.975))),
+                                accuracy = .01),
+                          ")")
+                            )]
+
+dt_range_dollar <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          dollar(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          dollar(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")
+                            )]
+dt_range_np_costs <- dt_psa_costs[, lapply(.SD, 
+                              function(x) 
+                          paste0("(",
+                          dollar(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          dollar(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")), 
+                          .SDcols = ae_abbrevs]
+
+dt_range_np_dalys <- dt_psa_dalys[, lapply(.SD, 
+                              function(x) 
+                          paste0("(",
+                          signif(min(quantile(x, probs = c(0.025, 0.975))),2),
+                          " – ",
+                          signif(max(quantile(x, probs = c(0.025, 0.975))),2),
+                          ")"))]
+
+
+outcomes_count <- c("cases_no_prt", "cases_prt", "cases_reduced")
+outcomes_dollar <- c("burden_no_prt", "burden_prt", "burden_reduced")
+outcomes_daly <- c("DALY_no_prt", "DALY_prt", "DALY_reduced")
+
+
+results <- matrix("", ncol = 8, nrow = 12, 
+                  dimnames = list(outcome = c(outcomes_count, 
+                                              "cost_per_ae",
+                                              "YLD_per_ae",
+                                              "YLL_per_ae",
+                                              outcomes_dollar,
+                                              #"Total PI cost",
+                                              #"Net savings of PI",
+                                              outcomes_daly),
+                                  ae = c("all_ae", ae_abbrevs)))
+
+for (outcome in outcomes_count){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_count[,get(paste0(ae,".",outcome))], "\n", dt_range_count[,get(paste0(ae,".",outcome))])
+  }
+}
+for (outcome in outcomes_dollar){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_dollar[,get(paste0(ae,".",outcome))], "\n", dt_range_dollar[,get(paste0(ae,".",outcome))])
+  }
+}
+for (ae in ae_abbrevs){
+  results["cost_per_ae", ae] <- paste0(dt_bc_costs[,dollar(get(ae))], "\n", dt_range_np_costs[,get(ae)])
+  results["YLD_per_ae", ae] <- paste0(dt_bc_dalys[,signif(get(paste0("YLD.",ae)),2)], "\n", dt_range_np_dalys[,get(paste0("YLD.",ae))])
+  results["YLL_per_ae", ae] <- paste0(dt_bc_dalys[,signif(get(paste0("YLL.",ae)),2)], "\n", dt_range_np_dalys[,get(paste0("YLL.",ae))])
+}
+
+# results["Total PI cost", "all_ae"]<- paste0(dt_bc_outcomes_dollar[,prt_cost], "\n", dt_range_dollar[,prt_cost])
+# results["Net savings of PI", "all_ae"]<- paste0(dt_bc_outcomes_dollar[,net_savings], "\n", dt_range_dollar[,net_savings])
+for (outcome in outcomes_daly){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_number[,get(paste0(ae,".",outcome))], "\n", dt_range_number[,get(paste0(ae,".",outcome))])
+  }
+}
+
+
+
+dt_results<-data.table(results, keep.rownames = TRUE)
+colnames(dt_results) <- c("Outcome", "All adverse events", "Sepsis",
+                          "Malaria", "FNHTR", "Syphilis", "HBV",
+                          "HCV", "HIV")
+outcome.names <- dt_results$Outcome
+names(outcome.names) <- c("Cases without WBPR",
+                          "Cases with WBPR",
+                          "Cases reduced by WBPR",
+                          "Net present cost per case",
+                          "YLD per case",
+                          "YLL per case",
+                          "Total net present cost without WBPR",
+                          "Total net present cost with WBPR",
+                          "Total net present cost reduced by WBPR",
+                          "DALYs without WBPR",
+                          "DALYs with WBPR",
+                          "DALYs averted by WBPR")
+dt_results[ , Outcome := names(outcome.names)[match(Outcome, outcome.names)] ]
+
+## Sensitivity analysis
+#Secondary infections
+dt_bc_outcomes[ , sec_infections_buden_reduced_all_ae := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+dt_psa_outcomes[ , sec_infections_buden_reduced_all_ae := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+
+
+
+range_sec_case_burden_reduced <- paste(dt_psa_outcomes[ , dollar(quantile(sec_infections_buden_reduced_all_ae, probs=c(.025, .975)))], collapse = " – ")
+
+
+dt_bc_outcomes[ , sec_infections_buden_reduced_all_ae := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+dt_psa_outcomes[ , sec_infections_buden_reduced_all_ae := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+range_sec_case_burden_reduced <- paste(dt_psa_outcomes[ , dollar(quantile(sec_infections_buden_reduced_all_ae, probs=c(.025, .975)))], collapse = " – ")
+
+#No sepsis
+dt_bc_outcomes[ , no_sepsis_buden_reduced_all_ae := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_buden_reduced_all_ae := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_net_cost := (
+  prt_cost - no_sepsis_buden_reduced_all_ae
+)]
+dt_psa_outcomes[ , no_sepsis_net_cost := (
+   prt_cost - no_sepsis_buden_reduced_all_ae
+)]
+dt_bc_outcomes[ , no_sepsis_all_ae_DALY_reduced := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_all_ae_DALY_reduced := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_icer := (no_sepsis_net_cost)/no_sepsis_all_ae_DALY_reduced]
+dt_psa_outcomes[ , no_sepsis_icer :=(no_sepsis_net_cost)/no_sepsis_all_ae_DALY_reduced]
+
+
+range_no_sepsis_burden_reduced <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_buden_reduced_all_ae, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_net_cost <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_net_cost, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_DALY_reduced <- paste(dt_psa_outcomes[ , comma(quantile(no_sepsis_all_ae_DALY_reduced, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_icer <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_icer, probs=c(.025, .975)))], collapse = " – ")
+
+
+```

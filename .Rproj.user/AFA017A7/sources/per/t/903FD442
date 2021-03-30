@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1609524989883.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "8|30|70|0|\n73|65|135|0|\n136|42|277|0|\n278|38|308|0|\n309|64|343|0|\n344|66|352|0|\n353|44|392|0|\n461|71|488|0|\n489|71|515|0|\n",
+    "hash" : "453680568",
+    "id" : "903FD442",
+    "lastKnownWriteTime" : 1611686490,
+    "last_content_update" : 1611686490903,
+    "path" : "G:/My Drive/Projects/ghana_hea/scripts/ghana_hea_model.R",
+    "project_path" : "scripts/ghana_hea_model.R",
+    "properties" : {
+        "cursorPosition" : "949,0",
+        "scrollLine" : "888",
+        "source_window_id" : ""
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
