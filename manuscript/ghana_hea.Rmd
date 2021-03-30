@@ -1,0 +1,931 @@
+---
+title: Cost-effectiveness and budget impact of whole blood pathogen reduction in Ghana
+author: 
+
+
+output: 
+  officedown::rdocx_document:
+    mapstyles:
+      Normal: ['First Paragraph']
+    reference_docx: word-style-reference-manuscript.docx
+bibliography: pathogen_inactivation.bib
+csl: american-medical-association-brackets.csl
+
+header-includes:
+- \usepackage{placeins}
+- \usepackage{amsfonts} 
+- \usepackage{amsmath}
+---
+
+::: {custom-style="Compact"}
+W. Alton Russell^1,2,3^, Shirley Owusu-Ofori^4^, Alex Owusu-Ofori^5,6^, Eileen Micah^7^, Betty Norman^7^, Brian Custer^2,8^
+
+<br>
+
+^1^Department of Management Science and Engineering, Stanford University, Stanford, USA
+
+^2^Vitalant Research Institute, San Francisco, USA
+
+^3^MGH Institute for Technology Assessment, Harvard Medical School, Boston, USA
+
+^4^Transfusion Medicine Unit, Komfo-Anokye Teaching Hospital, Kumasi, Ghana
+
+^5^Laboratory Services Directorate, Komfo-Anokye Teaching Hospital, Kumasi, Ghana
+
+^6^Department of Clinical Microbiology, Nkrumah University of Science and Technology, Kumasi, Ghana
+
+^7^Department of Medicine, Komfo-Anokye Teaching Hospital, Kumasi, Ghana
+
+^8^Department of Laboratory Medicine, University of California, San Francisco, CA
+
+<br>
+
+**Corresponding author:** W. Alton Russell, Harvard Medical School, 101 Merrimac St, Room 1032, Boston, MA, 02114, United States. email: [warussell\@mgh.harvard.edu](mailto:warussell@mgh.harvard.edu){.email}.
+
+<br>
+
+**Alt. author contact:** Brian Custer, [bcuster\@vitalant.org](mailto:bcuster@vitalant.org){.email}.
+
+<br>
+
+**Key words:** Pathogen reduction, blood safety, cost-utility, sub-Saharan Africa
+
+<br>
+
+**Running title:** Pathogen reduction in Ghana
+
+<br>
+
+**Summary of main point:** Whole blood pathogen reduction in Ghana would avert an estimated 11,000 -- 27,000 adverse events, eliminate an associated \$4.4M -- \$13.4M in annual direct medical costs, and may be cost-saving.
+
+<br>
+
+**Word count:** 2825 words
+
+<br>
+
+**Abbreviations:** **AVT** antiviral therapy, **FNHTR** febrile non-hemolytic transfusion reaction, **HBV** hepatitis B, **HCV** hepatitis C, **HIV** human immunodeficiency virus, **TT-** transfusion-transmitted, **TTI** transfusion-transmitted infection, **WBPR** while blood pathogen reduction.
+:::
+
+##### 
+
+```{r setup, include=FALSE}
+library(ggplot2)
+#library(gridExtra)
+library(flextable)
+library(ftExtra)
+library(officedown)
+library(officer)
+#library(knitr)
+theme_set(theme_bw())
+library(readxl)
+library(data.table)
+library(scales)
+```
+
+```{r read_format_data, include=FALSE}
+
+#read in parameter tables
+#all_cause_mort <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "All_cause_mort"))
+dt_transitions <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "Markov_probs"))
+dt_microcost_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "Microcost_params"))
+dt_riskmod_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "riskmod_params"))
+dt_daly_params <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "daly_params"))
+
+#read in results
+dt_bc_outcomes <- fread("../results/BC_outcomes.csv")
+dt_bc_costs <- fread("../results/BC_costs.csv")
+dt_bc_dalys <- fread("../results/BC_dalys.csv")
+dt_PSA_microcost <- fread("../results/PSA_microcost.csv")
+dt_PSA_params <- fread("../results/PSA_params.csv")
+dt_psa_costs <- fread("../results/PSA_costs.csv")
+dt_psa_dalys <- fread("../results/PSA_dalys.csv")
+dt_psa_outcomes <- fread("../results/PSA_outcomes.csv")
+dt_univ <- fread("../results/univ_sens_analysis.csv")
+
+
+#Results table
+
+ae_abbrevs <- c("sep", "mal", "ftr", "syp", "hbv", "hcv", "hiv")
+
+
+dt_bc_outcomes_count <- dt_bc_outcomes[ , lapply(.SD, comma)]
+dt_bc_outcomes_dollar <- dt_bc_outcomes[ , lapply(.SD, dollar)]
+dt_bc_outcomes_number <- dt_bc_outcomes[ , lapply(.SD, comma, accuracy = .01)]
+
+
+dt_range_count <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          comma(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          comma(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")
+                            )]
+
+dt_range_number <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          comma(min(quantile(x, probs = c(0.025, 0.975))), 
+                                accuracy = .01),
+                          " – ",
+                          comma(max(quantile(x, probs = c(0.025, 0.975))),
+                                accuracy = .01),
+                          ")")
+                            )]
+
+dt_range_dollar <- dt_psa_outcomes[ , lapply(.SD, 
+                          function(x) 
+                          paste0("(",
+                          dollar(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          dollar(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")
+                            )]
+dt_range_np_costs <- dt_psa_costs[, lapply(.SD, 
+                              function(x) 
+                          paste0("(",
+                          dollar(min(quantile(x, probs = c(0.025, 0.975)))),
+                          " – ",
+                          dollar(max(quantile(x, probs = c(0.025, 0.975)))),
+                          ")")), 
+                          .SDcols = ae_abbrevs]
+
+dt_range_np_dalys <- dt_psa_dalys[, lapply(.SD, 
+                              function(x) 
+                          paste0("(",
+                          signif(min(quantile(x, probs = c(0.025, 0.975))),2),
+                          " – ",
+                          signif(max(quantile(x, probs = c(0.025, 0.975))),2),
+                          ")"))]
+
+
+outcomes_count <- c("cases_no_prt", "cases_prt", "cases_reduced")
+outcomes_dollar <- c("burden_no_prt", "burden_prt", "burden_reduced")
+outcomes_daly <- c("DALY_no_prt", "DALY_prt", "DALY_reduced")
+
+
+results <- matrix("", ncol = 8, nrow = 12, 
+                  dimnames = list(outcome = c(outcomes_count, 
+                                              "cost_per_ae",
+                                              "YLD_per_ae",
+                                              "YLL_per_ae",
+                                              outcomes_dollar,
+                                              #"Total PI cost",
+                                              #"Net savings of PI",
+                                              outcomes_daly),
+                                  ae = c("all_ae", ae_abbrevs)))
+
+for (outcome in outcomes_count){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_count[,get(paste0(ae,".",outcome))], "\n", dt_range_count[,get(paste0(ae,".",outcome))])
+  }
+}
+for (outcome in outcomes_dollar){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_dollar[,get(paste0(ae,".",outcome))], "\n", dt_range_dollar[,get(paste0(ae,".",outcome))])
+  }
+}
+for (ae in ae_abbrevs){
+  results["cost_per_ae", ae] <- paste0(dt_bc_costs[,dollar(get(ae))], "\n", dt_range_np_costs[,get(ae)])
+  results["YLD_per_ae", ae] <- paste0(dt_bc_dalys[,signif(get(paste0("YLD.",ae)),2)], "\n", dt_range_np_dalys[,get(paste0("YLD.",ae))])
+  results["YLL_per_ae", ae] <- paste0(dt_bc_dalys[,signif(get(paste0("YLL.",ae)),2)], "\n", dt_range_np_dalys[,get(paste0("YLL.",ae))])
+}
+
+# results["Total PI cost", "all_ae"]<- paste0(dt_bc_outcomes_dollar[,prt_cost], "\n", dt_range_dollar[,prt_cost])
+# results["Net savings of PI", "all_ae"]<- paste0(dt_bc_outcomes_dollar[,net_savings], "\n", dt_range_dollar[,net_savings])
+for (outcome in outcomes_daly){
+  for (ae in c("all_ae", ae_abbrevs)){
+    results[outcome, ae] <- paste0(dt_bc_outcomes_number[,get(paste0(ae,".",outcome))], "\n", dt_range_number[,get(paste0(ae,".",outcome))])
+  }
+}
+
+
+
+dt_results<-data.table(results, keep.rownames = TRUE)
+colnames(dt_results) <- c("Outcome", "All adverse events", "Sepsis",
+                          "Malaria", "FNHTR", "Syphilis", "HBV",
+                          "HCV", "HIV")
+outcome.names <- dt_results$Outcome
+names(outcome.names) <- c("Cases without WBPR",
+                          "Cases with WBPR",
+                          "Cases reduced by WBPR",
+                          "Net present cost per case",
+                          "YLD per case",
+                          "YLL per case",
+                          "Total net present cost without WBPR",
+                          "Total net present cost with WBPR",
+                          "Total net present cost reduced by WBPR",
+                          "DALYs without WBPR",
+                          "DALYs with WBPR",
+                          "DALYs averted by WBPR")
+dt_results[ , Outcome := names(outcome.names)[match(Outcome, outcome.names)] ]
+
+## Sensitivity analysis
+#Secondary infections
+dt_bc_outcomes[ , sec_infections_buden_red := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+dt_psa_outcomes[ , sec_infections_buden_red := sep.burden_reduced+
+                   mal.burden_reduced+ftr.burden_reduced+
+                   syp.burden_reduced+2*hiv.burden_reduced+
+                   2*hbv.burden_reduced+2*hcv.burden_reduced]
+range_sec_infections_buden_red <- paste(dt_psa_outcomes[ , dollar(quantile(sec_infections_buden_red, probs=c(.025, .975)))], collapse = " – ")
+
+
+#No sepsis
+dt_bc_outcomes[ , no_sepsis_buden_red := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_buden_red := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_net_cost := (
+  prt_cost - no_sepsis_buden_red
+)]
+dt_psa_outcomes[ , no_sepsis_net_cost := (
+   prt_cost - no_sepsis_buden_red
+)]
+dt_bc_outcomes[ , no_sepsis_DALY_red := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_DALY_red := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_icer := (no_sepsis_net_cost)/no_sepsis_DALY_red]
+dt_psa_outcomes[ , no_sepsis_icer :=(no_sepsis_net_cost)/no_sepsis_DALY_red]
+
+
+range_no_sepsis_burden_reduced <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_buden_red, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_net_cost <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_net_cost, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_DALY_reduced <- paste(dt_psa_outcomes[ , comma(quantile(no_sepsis_DALY_red, probs=c(.025, .975)))], collapse = " – ")
+range_no_sepsis_icer <- paste(dt_psa_outcomes[ , dollar(quantile(no_sepsis_icer, probs=c(.025, .975)))], collapse = " – ")
+
+
+
+```
+
+```{r param_tables, include=FALSE}
+
+#RISK MODEL PARAMS
+dt.ts1 <- rbind(dt_riskmod_params)
+dt.ts1[ , basecase_formatted := ifelse(format == "dollar",  dollar(`Base case`, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(`Base case`,3)*100,"%"), 
+                                             signif(`Base case`,3)))]
+dt.ts1[ , Low := ifelse(format == "dollar",  dollar(Low, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(Low,3)*100,"%"), 
+                                             signif(Low,3)))]
+dt.ts1[ , High := ifelse(format == "dollar",  dollar(High, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(High,3)*100,"%"), 
+                                             signif(High,3)))]
+dt.ts1[ , Value := ifelse(is.na(Low), basecase_formatted, paste0(basecase_formatted, " (", Low, "–", High, ")"))]
+dt.ts1[ , Distn := ifelse(is.na(Param1), Distn, paste0(Distn, "(",Param1,", ",Param2,")"))]
+dt.ts1[ , Value_dist := ifelse(is.na(Distn), Value, paste0(Value, "; ", Distn))]
+dt.ts1 <- dt.ts1[ , c("Category", "Description", "Value_dist", "Source")]
+
+
+dt.ts1 <- as_grouped_data(dt.ts1, groups = c("Category"))
+t_riskmod <- as_flextable(dt.ts1)
+t_riskmod <- set_header_labels(t_riskmod, Description = "Risk model parameters")
+t_riskmod <- compose(t_riskmod, i = ~ !is.na(Category), j = "Description",
+              value = as_paragraph(as_chunk(Category)))
+t_riskmod <- align(t_riskmod, align = "left", part = "all")
+t_riskmod <- set_header_labels(t_riskmod, values = list(Value_dist = "Value (range); distribution"))
+t_riskmod <- theme_box(t_riskmod)
+t_riskmod <- width(t_riskmod, 1, 2.4)
+t_riskmod <- width(t_riskmod, 2, 2.4)
+t_riskmod <- width(t_riskmod, 3, 1.2)
+t_riskmod <- bg(t_riskmod, i = c(1, 6, 14, 22), bg = "#DDDDDD", part = "body")
+t_riskmod <- bold(t_riskmod, i=c(1, 6, 14, 22), part="body")
+t_riskmod <- bg(t_riskmod, bg = "#EAEAEA", part = "header")
+t_riskmod <- footnote(t_riskmod, i=1, j=2, part="header", ref_symbols = "1",
+                      value = as_paragraph("‘Min’ and ‘Max’ values were used for deterministic sensitivity analysis; ‘Distribution’ was used for probabilistic sensitivity analysis. Beta distribution was used when proportion count data were available; PERT distribution using the point estimate as mean was used otherwise."))
+t_riskmod <- footnote(t_riskmod, i=4, j=3, part="body",ref_symbols = "2",
+                      value = as_paragraph("Based on unpublished data for KATH collected by the authors and data for the Southern Area Blood Center provided by Dr. Lucy Asamoah-Akuoko of the National Blood Service, Ghana, personal communication."))
+
+t_riskmod <- footnote(t_riskmod, i=5, j=3, part="body",ref_symbols = "3",
+                      value = as_paragraph("Provided by Nigel Talboys and Eric Mwenda, Terumo BCT, personal communication."))
+t_riskmod <- footnote(t_riskmod, i=8, j=3, part="body",ref_symbols = "4",
+                      value = as_paragraph("We pooled estimates of the rate of bacterial contamination in whole blood units in Ghana from five analyses: 9/100 units were contaminated in Allotey 2019; 24/192 in Adjeu 2009; 16/97 in Boye 2016; 14/80 in Opuku-Okrah 2009; and 23/100 in Owusu-Ofori 2012."))
+t_riskmod <- footnote(t_riskmod, i=11, j=3, part="body",ref_symbols = "5",
+                      value = as_paragraph("Estimated based on rate of repeat reactive Treponema pallidum hemagglutination assay (TPHA) positivity in Durban and Johannesburg provided by Marion Vermeulen of the South African National Blood Service, personal communication."))
+t_riskmod <- footnote(t_riskmod, i=16, j=3, part="body",ref_symbols = "6",
+                      value = as_paragraph("Study classified 6/23 bacterially contaminated donations as a probable TT-sepsis case; 5/23 as a possible case, 12/23 as unlikely. We assumed probable cases had a 90% probability of causing clinical disease; possible cases had a 60% probability; and unlikely cases had a 10% probability."))
+t_riskmod <- footnote(t_riskmod, i=18, j=3, part="body",ref_symbols = "7",
+                      value = as_paragraph("Assumed HBV vaccinated individuals have no risk of clinical outcomes. Estimated that 95% of recipients under 25 would be vaccinated based on WHO/UNICEF 2020 report and that 56% of population is under 20 based on UN 2019."))
+t_riskmod <- footnote(t_riskmod, i=19, j=3, part="body",ref_symbols = "8",
+                      value = as_paragraph("Assumed transmission occurred in donations stored less than 4 days only based on van der Sluis 1985 and Adegoke 2011. Estimated that 57% of donations are stored less than 4 days from Owusu-Ofori 2011."))
+t_riskmod <- footnote(t_riskmod, i=20, j=3, part="body",ref_symbols = "9",
+                      value = as_paragraph("Calculated from Allain 2016; see supplemental methods."))
+t_riskmod <- footnote(t_riskmod, i=24, j=3, part="body",ref_symbols = "10",
+                      value = as_paragraph("Agapova 2015 used 50, adjusted downwards based on authors' estimation."))
+t_riskmod <- footnote(t_riskmod, i=29, j=3, part="body",ref_symbols = "11",
+                      value = as_paragraph("Jimenez-Marco 2018 estimated a 2.08-fold reduction in pathogen reduced platelets. Data from Ghana reports a decrease across randomized groups from 11/255 to 17/303 implying a fold risk reduction of 1.3. Based on both studies, chose 1.5 as base case estimate."))
+t_riskmod <- font(t_riskmod, fontname = "Times", part = "all")
+t_riskmod <- fontsize(t_riskmod, size = 10, part = "all")
+
+
+
+
+
+#MICROCOST PARAMS
+dt.t2 <- rbind(dt_microcost_params)
+dt.t2[ , basecase_formatted := ifelse(Category == "Cost",  dollar(`Base case`, largest_with_cents = 1e2), 
+                                      ifelse(Category == "Proportion receiving", paste0(signif(`Base case`,3)*100,"%"), 
+                                             signif(`Base case`,3)))]
+dt.t2[ , Low := ifelse(Category == "Cost",  dollar(Low, largest_with_cents = 1e2), 
+                                      ifelse(Category == "Proportion receiving", paste0(signif(Low,3)*100,"%"), 
+                                             signif(Low,3)))]
+dt.t2[ , High := ifelse(Category == "Cost",  dollar(High, largest_with_cents = 1e2), 
+                                      ifelse(Category == "Proportion receiving", paste0(signif(High,3)*100,"%"), 
+                                             signif(High,3)))]
+
+
+dt.t2[ , Value := ifelse(is.na(Low), basecase_formatted, paste0(basecase_formatted, " (", Low, "–", High, ")"))]
+dt.t2[ , Distn := "PERT"]
+dt.t2[ , Value_dist := ifelse(is.na(Distn), Value, paste0(Value, "; ", Distn))]
+dt.t2 <- dt.t2[ , c("Category", "Description", "Value_dist", "Source")]
+
+
+dt.t2 <- as_grouped_data(dt.t2, groups = c("Category"))
+t_microcost <- as_flextable(dt.t2)
+t_microcost <- set_header_labels(t_microcost, Description = "Micro-costing parameters")
+t_microcost <- compose(t_microcost, i = ~ !is.na(Category), j = "Description",
+              value = as_paragraph(as_chunk(Category)))
+t_microcost <- align(t_microcost, align = "left", part = "all")
+t_microcost <- set_header_labels(t_microcost, values = list(Value_dist = "Value (range); distribution"))
+t_microcost <- font(t_microcost, fontname = "Times", part = "all")
+t_microcost <- theme_box(t_microcost)
+t_microcost <- width(t_microcost, 1, 3)
+t_microcost <- width(t_microcost, 2, 2.5)
+t_microcost <- width(t_microcost, 3, 1)
+t_microcost <- footnote(t_microcost, i=38:39, j=3,
+                        value=as_paragraph("We assumed patients who initiated AVT after AIDS progression were diagnosed based on symptoms and therefore incurred additional costs for due to AIDS-associated illnesses. Costs in the first year were comprised of $57.80 for baseline laboratory investigations, $40.46 in follow-up visits, $255 - $510 for investigation and treatment for AIDS-associated illnesses, and $83.04 -- $124.56 for AVT. Costs in the second year were the same, except we assumed only one third as much spending on investigation and treatment for AIDS-associated illnesses."))
+t_microcost <- bg(t_microcost, i = c(1, 9, 50), bg = "#DDDDDD", part = "body")
+t_microcost <- bg(t_microcost, bg = "#EAEAEA", part = "header")
+t_microcost <- bold(t_microcost, i = c(1, 9, 50))
+t_microcost <- fontsize(t_microcost, size = 10, part = "all")
+
+
+
+
+#MARKOV TRANSITIONS
+dt.t3 <- rbind(dt_transitions)
+dt.t3[ , basecase_formatted := ifelse(`Base case`=="#","#",  paste0(signif(as.numeric(`Base case`),3)*100,"%"))]
+dt.t3[ , Low := ifelse(is.na(Low), NA, paste0(signif(as.numeric(Low),3)*100,"%"))]
+dt.t3[ , High := ifelse(is.na(High), NA, paste0(signif(as.numeric(High),3)*100,"%"))]
+dt.t3[ , Value := ifelse(is.na(Low), basecase_formatted, paste0(basecase_formatted, " (", Low, "–", High, ")"))]
+dt.t3[ , Distn := ifelse(is.na(Param1), Distn, paste0(Distn, "(",Param1,", ",Param2,")"))]
+dt.t3[ , Value_dist := ifelse(is.na(Distn), Value, paste0(Value, "; ", Distn))]
+#dt.t3[, Source := "#"]
+dt.t3 <- dt.t3[ , c("Disease_Category", "From_disp", "To_disp", "Value_dist", "Source")]
+
+
+dt.t3 <- as_grouped_data(dt.t3, groups = c("Disease_Category"))
+t_transitions <- as_flextable(dt.t3)
+t_transitions <- set_header_labels(t_transitions, From_disp = "From", To_disp = "To")
+t_transitions <- add_header_row(t_transitions, values = c("Annual transition probability", "Annual transition probability",
+                                        "Value (range); distribution", "Source"))
+t_transitions <- compose(t_transitions, i = ~ !is.na(Disease_Category), j = "From_disp",
+              value = as_paragraph(as_chunk(Disease_Category)))
+t_transitions <- align(t_transitions, align = "left", part = "all")
+t_transitions <- set_header_labels(t_transitions, values = list(Value_dist = "Value (range); distribution"))
+t_transitions <- merge_h(t_transitions, part = "header")
+t_transitions <- merge_v(t_transitions, part = "header")
+
+t_transitions <- merge_v(t_transitions, j = "From_disp", part = "body")
+
+t_transitions <- fontsize(t_transitions, size = 10, part = "all")
+t_transitions <- font(t_transitions, fontname = "Times", part = "all")
+t_transitions <- theme_box(t_transitions)
+t_transitions <- width(t_transitions, 1, 1.4)
+t_transitions <- width(t_transitions, 2, 1.4)
+t_transitions <- width(t_transitions, 3, 2.4)
+t_transitions <- width(t_transitions, 4, 1.3)
+t_transitions <- bg(t_transitions, i = c(1, 39, 46, 53, 76, 85, 91, 103, 110), bg = "#DDDDDD", part = "body")
+t_transitions <- bold(t_transitions, i = c(1, 39, 46, 53, 76, 85, 91, 103, 110))
+t_transitions <- bg(t_transitions, bg = "#EAEAEA", part = "header")
+
+
+
+
+#DALY CALCULATIONS
+dt.daly <- rbind(dt_daly_params)
+dt.daly[ , basecase_formatted := ifelse(format == "dollar",  dollar(`Base case`, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(`Base case`,3)*100,"%"), 
+                                             signif(`Base case`,3)))]
+dt.daly[ , Low := ifelse(format == "dollar",  dollar(Low, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(Low,3)*100,"%"), 
+                                             signif(Low,3)))]
+dt.daly[ , High := ifelse(format == "dollar",  dollar(High, largest_with_cents = 1e2), 
+                                      ifelse(format == "percent", paste0(signif(High,3)*100,"%"), 
+                                             signif(High,3)))]
+dt.daly[ , Value := ifelse(is.na(Low), basecase_formatted, paste0(basecase_formatted, " (", Low, "–", High, ")"))]
+dt.daly <- dt.daly[ , c("Category", "Description", "Value", "Source")]
+
+
+#Additional parameters for calculation disability-adjusteed life years (DALYs)
+dt.daly <- as_grouped_data(dt.daly, groups = c("Category"))
+t_daly <- as_flextable(dt.daly)
+#t_daly <- set_header_labels(t_daly, Description = "")
+t_daly <- compose(t_daly, i = ~ !is.na(Category), j = "Description",
+              value = as_paragraph(as_chunk(Category)))
+t_daly <- align(t_daly, align = "left", part = "all")
+t_daly <- set_header_labels(t_daly, values = list(Value = "Value (range)"))
+t_daly <- theme_box(t_daly)
+t_daly <- width(t_daly, 1, 2.4)
+t_daly <- width(t_daly, 2, 2.4)
+t_daly <- width(t_daly, 3, 1.2)
+t_daly <- bg(t_daly, i = c(1, 7, 10, 13, 17, 31, 49), bg = "#DDDDDD", part = "body")
+t_daly <- bold(t_daly, i = c(1, 7, 10, 13, 17, 31, 49), part = "body")
+t_daly <- bg(t_daly, bg = "#EAEAEA", part = "header")
+t_daly <- font(t_daly, fontname = "Times", part = "all")
+t_daly <- footnote(t_daly, i=1, part="body",ref_symbols = "1",
+                      value = as_paragraph("Sepsis: Inpatient mortality weight applied to the increased duration of hospitalization (parameter in Table S2). Probability of post-hospitalization sequelae applied to patients surviving hospitalization."))
+t_daly <- footnote(t_daly, i=17, part="body",ref_symbols = "2",
+                      value = as_paragraph("HCV: Assumed no disability from subclinical acute HCV. Assumed some disability from acute HCV on AVT due to both symptoms (estimated from Stanaway 2016) and treatment side effects, calculated from the difference between the disability weights used for treatment at other disease stages in Fraser 2016."))
+t_daly <- footnote(t_daly, i=31, part="body",ref_symbols = "3",
+                      value = as_paragraph("HBV: Assumed no disability for subclinical acute, immune tolerant, and inactive carrier disease states. We assumed the disability in the chronic HBeAg- HBV would be half that of immune reactive when not on AVT and would be equal to that of immune reactive when on AVT."))
+t_daly <- footnote(t_daly, i=49, part="body",ref_symbols = "4",
+                      value = as_paragraph("HIV: We assumed no disability for undetected (subclinical) HIV. For undetected AIDS, we assumed patients experience symptoms that are less severe than average (otherwise they would be diagnosed), and we calculated their disability weight as 50% the typical disability weight for symptomatic pre-HIV AIDS. For patients initiating AVT with pre-AIDS HIV, we assume 50% had no symptoms and 50% have symptomatic HIV that typically becomes asymptomatic about 6 months after AVT initiation. We therefore calculated the average disability weight for the first year of HIV treatment as 75% of the 'receiving treatment' weight and 25% of the 'symptomatic HIV' weight. For patients initiating AVT with AIDS, we calculated their first-year disutility as 50% that of untreated AIDS and 50% that of a typical patient on treatment. We calculated their second-year disutility as 25% that of untreated AIDS and 75% that of a typical patient on treatment. For those with residual disability from their AIDS-associated illness, we assumed their disutility remained the same for subsequent years on treatment."))
+t_daly <- fontsize(t_daly, size = 10, part = "all")
+# 
+# t_daly <- colformat_md(t_daly, j=4,
+#                        pandoc_args=c('--csl', 'apa.csl'))
+```
+
+```{r gen_figs, include=FALSE}
+
+
+#Tornado diagram
+bc_net_savings <- unlist(dt_bc_outcomes$net_savings)
+
+
+dt_univ[ , name_range := paste0(Param_disp, "\n", Low, " – ", High)]
+dt_univ[ , name_range := factor(name_range, levels = rev(unique(name_range)))]
+#dt_univ[ , blank := pmin(net_savings_low, net_savings_high)]
+dt_univ_plt <- rbind(setorder(dt_univ[abs_net_savings_range>5e5], -abs_net_savings_range))
+dt_univ_plt[, x:= nrow(dt_univ_plt):1]
+
+
+ggplot(data = dt_univ_plt) + 
+  geom_segment(aes(x = name_range, xend=name_range, y = net_savings_low, yend=net_savings_high), size=6, color="grey")+
+  theme(legend.position = "None")+
+  coord_flip()+
+  geom_hline(yintercept = bc_net_savings, color="black")+
+  geom_hline(yintercept = 0, alpha = 0.5, color = "red")+
+  scale_alpha_manual(values = c(1, 0))+
+  scale_y_continuous(labels = function(x){paste0("$",x/1e6,"M")},
+                     )+
+  xlab("")+
+  ylab("Net savings of WBPR")+
+  annotate("text", x=0.75, y=bc_net_savings+1.4e6, label=paste0(dollar(bc_net_savings)), 
+           size = 3.5, color="black")
+
+
+ggsave("figs/tornado.png",
+       width=6.5,
+       height = 4,
+       units="in")
+
+
+
+# #Cases&costs by AE
+# dt_bc_outcomes
+dt_outcome_quants <- dt_psa_outcomes[ , lapply(.SD,
+                          function(x)
+                          quantile(x, probs = c(0.025, 0.975)))]
+# 
+# dt_case_cost_plot <- data.table(
+#   ae_abbrev = rep(ae_abbrevs, 2),
+#   outcome = rep(c("Cases reduced",
+#                   "Healthcare spending reduced"), each = 7),
+#   value = numeric(),
+#   lb = numeric(),
+#   ub = numeric()
+# )
+# for (ae in ae_abbrevs){
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Cases reduced", value:= dt_bc_outcomes[1, get(paste0(ae, ".cases_reduced"))]]
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Cases reduced", lb:= dt_outcome_quants[1, get(paste0(ae, ".cases_reduced"))]]
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Cases reduced", ub:= dt_outcome_quants[2, get(paste0(ae, ".cases_reduced"))]]
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Healthcare spending reduced", value:= dt_bc_outcomes[1, get(paste0(ae, ".burden_reduced"))]]
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Healthcare spending reduced", lb:= dt_outcome_quants[1, get(paste0(ae, ".burden_reduced"))]]
+#   dt_case_cost_plot[ae_abbrev == ae & outcome == "Healthcare spending reduced", ub:= dt_outcome_quants[2, get(paste0(ae, ".burden_reduced"))]]
+# }
+# 
+# max_case_reduct <- max(dt_case_cost_plot[outcome=="Cases reduced"]$ub)
+# max_spend_reduct <- max(dt_case_cost_plot[outcome=="Healthcare spending reduced"]$ub)
+# dt_case_cost_plot[ , val.perc := ifelse(outcome == "Cases reduced", value/max_case_reduct, value/max_spend_reduct)]
+# dt_case_cost_plot[ , lb.perc := ifelse(outcome == "Cases reduced", lb/max_case_reduct, lb/max_spend_reduct)]
+# dt_case_cost_plot[ , ub.perc := ifelse(outcome == "Cases reduced", ub/max_case_reduct, ub/max_spend_reduct)]
+# 
+# ggplot(dt_case_cost_plot, aes(x = reorder(ae_abbrev, -value), y = value))+
+#   geom_bar(position="dodge", stat="identity")+
+#   geom_linerange(aes(ymin = lb, ymax = ub))+
+#   facet_wrap(.~outcome, nrow = 2, scales = "free_y", strip.position = "left")+
+#   ylab(NULL)+xlab("Adverse event")+
+#   theme(strip.background = element_blank(), strip.placement = "outside")
+
+
+
+#Net budget impact
+dt_net_impact <- data.table(
+  outcome = factor(c("PI cost",
+               "Healthcare\nsavings",
+               "Net\nimpact"), levels = c("PI cost",
+               "Healthcare\nsavings",
+               "Net\nimpact")),
+  value = c(dt_bc_outcomes$prt_cost, 
+            -1*dt_bc_outcomes$all_ae.burden_reduced,
+            -1*dt_bc_outcomes$net_savings),
+  lb = c(dt_outcome_quants[1,]$prt_cost, 
+          -1*dt_outcome_quants[1,]$all_ae.burden_reduced,
+          -1*dt_outcome_quants[1,]$net_savings),
+  ub = c(dt_outcome_quants[2,]$prt_cost, 
+          -1*dt_outcome_quants[2,]$all_ae.burden_reduced,
+          -1*dt_outcome_quants[2,]$net_savings)
+)
+
+ggplot(dt_net_impact, aes(x=outcome, y = value))+
+  geom_bar(position="dodge", stat="identity", width = 0.5, fill="grey")+
+  geom_errorbar(aes(ymin=lb, ymax=ub), width=0.2)+
+  ylab("Net present cost")+xlab(NULL)+
+  scale_y_continuous(labels = label_dollar())+
+  geom_hline(yintercept = 0)
+
+ggsave("figs/net_impact.png",
+       width=3,
+       height = 2.5,
+       units="in")
+
+
+
+#PSA scatter
+dt_psa_outcomes[, cost_saving := ifelse(net_savings>=0, "Cost saving", "Not cost saving")]
+dt_psa_outcomes[, ICER:= -1*net_savings/all_ae.DALY_reduced]
+
+ggplot(dt_psa_outcomes, aes(x=all_ae.DALY_reduced, y=-1*net_savings))+
+  geom_point(aes(color=cost_saving), alpha=0.5)+
+  geom_hline(yintercept=0, color="grey")+
+  scale_y_continuous(labels = label_dollar(), name="Net incremental healthcare cost")+
+  scale_x_continuous(labels = label_comma(), name="Incremental DALYs averted", limits = c(0, 160000))+
+  #geom_abline(slope=100)+
+  annotate("text", 
+           label=paste0("WBPR was cost-saving\nin ",
+                        percent(dt_psa_outcomes[net_savings>0, .N/nrow(dt_psa_outcomes)]),
+                        " of iterations"),
+           x=120000, y = -1.3e6, color="forestgreen")+
+  annotate("text", 
+           label=paste0("WBPR never cost more\nthan ",
+                        dt_psa_outcomes[, dollar(ceiling(max(ICER)))],
+                        " per DALY"),
+           x=120000, y = 1.3e6, color="dodgerblue")+
+  theme(legend.position = "None")+
+  scale_color_manual(values=c("forestgreen", "dodgerblue"))
+  # annotate("label", 
+  #          label=paste0("WBPR cost <$100/DALY in ",
+  #                       percent(dt_psa_outcomes[, sum(-1*net_savings/all_ae.DALY_reduced<100)/.N]),
+  #                       " of iterations"),
+  #          x=90000, y = 5.5e6)
+
+ggsave("figs/cea_scatter.png",
+       width=6.5,
+       height = 4,
+       units="in")
+
+```
+
+# Abstract
+
+**Background:** Despite the promise of pathogen reduction for reducing transfusion-associated adverse events in sub-Saharan Africa, no health-economic assessment is publicly available.
+
+**Methods:** We developed a mathematical risk reduction model to estimate the impact of nationwide whole blood pathogen reduction in Ghana on the incidence of six infectious and one non-infectious transfusion-associated adverse events. We estimated the lifetime direct healthcare costs and disability-adjusted life years lost for each adverse event. For HIV, HCV, and HBV, we simulated disease progression using Markov models, accounting for the likelihood and timing of clinical detection and treatment. We performed probabilistic and univariate sensitivity analysis.
+
+**Results:** Adding whole blood pathogen reduction to Ghana's blood safety portfolio would avert an estimated `r dt_bc_outcomes_count$all_ae.cases_reduced` `r dt_range_count$all_ae.cases_reduced` adverse events and `r dt_bc_outcomes_count$all_ae.DALY_reduced` `r dt_range_count$all_ae.DALY_reduced` disability-adjusted life years annually, primarily by averting bacterial sepsis (`r dt_bc_outcomes[, percent(sep.cases_reduced/all_ae.cases_reduced,1)]`) and malaria (`r dt_bc_outcomes[, percent(mal.cases_reduced/all_ae.cases_reduced,1)]`) infections. One year of pathogen reduction would cost an estimated `r dt_bc_outcomes_dollar$prt_cost` `r dt_range_dollar$prt_cost` and eliminate `r dt_bc_outcomes_dollar$all_ae.burden_reduced` `r dt_range_dollar$all_ae.burden_reduced` in direct healthcare spending on transfusion-associated adverse events. We estimate a `r percent(dt_psa_outcomes[net_savings > 0, .N ]/nrow(dt_psa_outcomes))` probability that the addition of pathogen reduction would reduce overall healthcare spending. Findings were most sensitive to uncertainty in the probability that a bacterially contaminated blood donation causes sepsis.
+
+**Conclusions:** Whole blood pathogen reduction would substantially reduce the burden of known transfusion-associated adverse events in Ghana and may reduce overall healthcare spending. Additional benefits not captured by this analysis may include averting secondary transmission of infectious diseases, reducing non-medical costs, and avoiding other adverse events, such as new or re-emerging transfusion-transmitted infections.
+
+##### 
+
+# Introduction
+
+> Pathogen reduction of blood components for transfusion is a promising new technology for reducing transfusion-transmitted (TT-) infections (TTIs) and non-infectious transfusion-associated adverse events in Sub-Saharan Africa [@Ware2018]. Different types of pathogen reduction use ultraviolet light and/or intercalating compounds to inactivate pathogens in blood components or whole blood [@Prowse2012]. The health-economic consequences of pathogen reduction of plasma and platelet components has been estimated for different health systems [@Custer2010; @Agapova2015; @Bell2003; @Babigumira2018; @CADTH2010]. Compared to the European and North American settings where prior analyses have focused, health systems in sub-Saharan Africa often experience greater resource constraints, higher baseline rates of certain transfusion-associated adverse events, and more frequent blood shortages [@Bloch2012; @Barro2018]. Furthermore, use of whole blood rather than components limits the applicability of platelet and plasma pathogen reduction in this context (in Ghana, more than 80% of blood donations are transfused as a whole blood units) [@Allain2017; @WorldHealthOrganisation2017]. For these reasons, whole blood pathogen reduction (WBPR) may be a more appropriate technology for sub-Saharan Africa. A recent randomized trial analyzed the effectiveness of WBPR for averting TT-malaria in Ghana [@Allain2016]. However, no health-economic assessment has been published for WBPR in any context, nor for any pathogen reduction modality in sub-Saharan Africa. We developed a decision-analytic model to estimate how the addition of WBPR to the existing blood safety program in Ghana would impact the number of transfusion-associated adverse events, healthcare costs, and disability-adjusted life years (DALYs) lost. We also estimated the cost-effectiveness of WBPR.
+
+<br>
+
+# Methods
+
+> We estimated the health-economic consequences of WBPR in Ghana from a healthcare payer perspective. We considered seven adverse events, including chronic viral TTIs (HIV, HCV, HBV), bacterial TTIs (syphilis, bacterial sepsis), malaria, and febrile non-hemolytic transfusion reactions (FNHTRs), a non-infectious adverse event. We estimated the number of adverse event cases with and without WBPR, the DALYs and healthcare costs incurred per case, the budget impact of WBPR, and the cost-effectiveness in 2019 US dollars spent per DALY averted. We assessed uncertainty through deterministic and probabilistic sensitivity analysis. The model was programmed in R, and all data and code are available in a public repository **[Will create citation before submitting].**
+
+## Risk reduction model structure
+
+> Our two-armed decision tree estimated the number of adverse event cases for status quo blood safety interventions and for the status quo plus WBPR. The status quo was to test all donations for HIV-Ab, HBsAg, Anti-HCV Ab, and Anti-treponemal Ab [@WorldHealthOrganisation2017]. All parameter values for the risk reduction model are shown in Table 1 [@WorldHealthOrganisation2017; @Mafirakureva2015; @Osei2013; @Jayaraman2010; @Adjei2009; @Allotey2019; @Allain2016; @Owusu-Ofori2012; @Opoku-Okrah2009; @Boye2016; @Owusu-Ofori2017; @Jimenez-Marco2018; @vanderSluis1985; @Adegoke2011; @OwusuOfori2011; @WorldHealthOrganization2020; @WHO2019; @UnitedNationsPopulationDivision2019], and mathematical calculations are provided in Section A of the online supplement.
+
+> We assumed that each whole blood unit would be transfused to a single recipient (i.e., would not be processed into components), and we assumed that if one recipient experienced multiple adverse events from a single transfusion event then the associated costs and disutility would be additive. For each of the six TTIs, the baseline (without WBPR) number of clinically meaningful adverse events was calculated from the annual number of whole blood donations collected nationally, the percent of collected donations not transfused (wastage), the estimated residual risk among donors after TTI screening, and the risk of clinical outcome (i.e., likelihood that transfusion of an infectious unit results in clinically relevant disease). For FNHTR, the baseline rate of clinically relevant adverse events per recipient was extrapolated from local data and prior studies, and the per-donation risk of FNHTR was derived by multiplying the per-recipient rate by the estimated average number of whole blood units transfused per recipient. We assumed some recipients were not at risk of clinical outcomes due to factors such as prior malaria infection, HBV vaccination, and existing HIV infection (Table 1). For each adverse event, we divided by an *x*-fold risk-reduction factor to estimate the number of adverse events when using WBPR. These factors were based on clinical trials where available (malaria, FNHTR) and otherwise sourced from a prior modeling study [@Custer2010].
+
+## Estimating costs and DALYs from adverse events
+
+> We separately modeled a pediatric and adult cohort of transfusion recipients, with an average age of 5 and 40 at the time of transfusion, respectively. Both cohorts had a 5.7% -- 8.6% chance of inpatient mortality [@VanHulst2008], after which we assumed normal life expectancy based on the age-specific death rate indicator in the World Health Organization Global Health Observatory data repository at baseline [@WHO_data2020]. Parameters used to calculate the average DALYs of each adverse event are shown in Supplemental Table S1 [@Custer2010; @Lewis2019; @GBD2013; @Fraser2016; @Nayagam2016; @Stanaway2016]. We used estimates of the duration of illness and the associated disability weight to estimate the average years lived with disability (YLD) for each adverse event. We calculated the average years of life lost (YLL) based on the estimated increased risk of inpatient mortality for malaria in the pediatric cohort and sepsis in both cohorts. For each chronic viral infection, we developed Markov models for both the pediatric and adult cohorts to estimated medical costs and DALYs lost related to the infection over the remaining lifetime of transfusion recipients.
+>
+> We used a micro-costing approach to estimate the average health care spending associated with each transfusion-associated adverse event. For most costs, authors with relevant clinical experience at the Komfo Anokye Teaching Hospital (KATH) in Kumasi, Ghana, estimated the costs and utilization patterns for resources used to treat each adverse event. For HIV, we assumed infections that had not yet progressed to AIDS would be detected in an outpatient clinic and used empirical costing estimates from a recent study of healthcare costs for patients initiating antiviral therapy (AVT) [@Mikkelsen2017]. We treated FNHTR, malaria, syphilis, and sepsis as acute infections and assumed associated costs and morbidity occurred within a year of transfusion. For HIV, HBV, and HCV. we estimated the annual resource utilization and associated costs for each disease state in the Markov models. Supplemental Table S2 [@Mikkelsen2017; @VanHulst2008] contains estimates and uncertainty ranges for all micro-costing parameters, and Supplemental Table S3 contains the calculations used for the four acute adverse events and for each disease state of the chronic viral infections.
+
+> The Markov models for HCV, HBV, and HIV captured the disease natural history, treatment initiation, and treatment effectiveness. We used a one-year cycle length, discounted future costs at 3% annually, and used the cycle tree method to correct for discretization error [@Naimark2013]. All transition probabilities and their sources are listed in Supplemental Table S4 [@Mafirakureva2016; @Nayagam2016; @Fraser2016; @Morgan2002]. The supplement also contains schematics for the transition matrix for each chronic adverse event (Supplementary Figures S1 -- S3) and Markov trace plots of the proportion of transfusion recipients in each disease state over time (Supplementary Figures S4 -- S6).
+
+> For HCV, our natural history model and treatment efficacy estimates were based on a health economic model developed for The Gambia [@Nayagam2016], and transitions into treatment were estimated based on authors' (SOO, AOO, EM, BN) clinical experience. Within the model, a small percentage of infections are detected during the acute phase in the first year and receive AVT; otherwise, recipients have subclinical acute infections. Some initially subclinical infections progress through chronic HCV disease states. A percentage of patients in the subclinical chronic HCV, compensated cirrhosis, or decompensated cirrhosis disease states are detected and receive AVT each year. AVT clears most HCV infections, but some patients experience treatment failure with disease progression while receiving monitoring and care.
+
+> For HBV, our natural history model and treatment efficacy estimates were based on a health economic model developed for South Africa [@Fraser2016]. In the model, acute infections have a small probability of being detected and receive monitoring and care during the first year, but most infections are subclinical during the acute phase. Subclinical infections that progress to the immune reactive, compensated cirrhosis, or decompensated cirrhosis states have an annual probability of clinical detection, at which point AVT is initiated. Subclinical patients in the chronic HBeAg- phase also have an annual probability of detection. Those patients transition to receiving monitoring and care without AVT, but some initiate AVT each year due to clinical indications such as a spike in viral load. We assumed patients on AVT do not progress to later disease states and would continue with AVT and monitoring for their lifetimes. However, a small annual risk of developing hepatocellular carcinoma remains for those who developed cirrhosis before AVT initiation.
+
+> For HIV, we constructed a natural history model and calibrated the annual probability of progression to AIDS, death from HIV, and death from AIDS to a longitudinal study of HIV progression from Uganda (Figure S7) [@Morgan2002]. We estimated the annual probability of initiating AVT from different subclinical disease states based on the authors' clinical experience, and we assumed patients who initiated AVT before progressing to AIDS continue with treatment for the remainder of their lives and have a normal life expectancy. Annual costs for those who initiated AVT before progressing to AIDS are based on an empirical study conducted in HIV clinics in Ghana that found that on average, medical expenses were highest in the year of AVT initiation and tapered off over three years [@Mikkelsen2017]. For patients who initiate AVT after progressing to AIDS, we assumed they would receive a diagnosis and initiate AVT during a hospitalization for AIDS complications and therefore incur substantially higher costs in the first two years as compared to those initiating AVT with HIV. We also assumed those initiating AVT with AIDS would have a higher risk of dying during the first two years of AVT. After two years on AVT, we assumed most surviving AIDS patients would have recovered their CD4 counts and have the same annual costs and risk of death as any other AVT patient. Some surviving AIDS patients, however, would have residual disability due to AIDS-associated illnesses such as stroke or kidney failure. We assumed a higher lifetime annual cost and mortality risk for these patients.
+
+## Uncertainty analysis
+
+> For each input parameter, we estimated a range of likely values for deterministic sensitivity analysis and assigned a distribution for probabilistic sensitivity analysis. We used beta distributions when estimates were based on counts for a binary outcome or when the parameter source used a beta distribution; otherwise, we sampled each parameter from a PERT distribution. For all outcomes, we reported the expected value from the base case scenario and a 95% uncertainty interval based on the 2.5th and 97.5th quantiles of the outcome across 10,000 iterations of probabilistic sensitivity analysis. We conducted two scenario analyses. In one, we approximated secondary infections by assuming each surviving recipient infected with HIV, HBV, or HCV infects one other person during the first year following transfusion. In another, we excluded benefits related to preventing TT-sepsis cases from the analysis.
+
+<br>
+
+# Results
+
+> The number of modeled adverse events in Ghana per year without WBPR was `r dt_bc_outcomes_count$all_ae.cases_no_prt` `r dt_range_count$all_ae.cases_no_prt`. WBPR reduced the number of adverse events by `r dt_bc_outcomes_count$all_ae.cases_reduced` `r dt_range_count$all_ae.cases_reduced` to `r dt_bc_outcomes_count$all_ae.cases_prt` `r dt_range_count$all_ae.cases_prt` per year. `r dt_bc_outcomes[, percent(sep.cases_reduced/all_ae.cases_reduced,1)]` of averted adverse event cases were bacterial sepsis infections; `r dt_bc_outcomes[, percent(mal.cases_reduced/all_ae.cases_reduced,1)]` were malaria; `r dt_bc_outcomes[, percent(ftr.cases_reduced/all_ae.cases_reduced,1)]` were FNHTR; `r dt_bc_outcomes[, percent(hcv.cases_reduced/all_ae.cases_reduced,1)]` were HCV; `r dt_bc_outcomes[, percent(hbv.cases_reduced/all_ae.cases_reduced,1)]` were HBV; `r dt_bc_outcomes[, percent(hiv.cases_reduced/all_ae.cases_reduced,.01)]` were HIV; and `r dt_bc_outcomes[, percent(syp.cases_reduced/all_ae.cases_reduced,.01)]` were syphilis (Table 2). The estimated DALYs lost without WBPR was `r dt_bc_outcomes[, comma(all_ae.DALY_no_prt)]` `r dt_range_count$all_ae.DALY_no_prt`, of which `r dt_bc_outcomes[, percent(sep.DALY_no_prt/all_ae.DALY_no_prt,1)]` was due to sepsis infections. WBPR would avert an estimated `r dt_bc_outcomes[, comma(all_ae.DALY_reduced)]` `r dt_range_count$all_ae.DALY_reduced` DALYs.
+
+> The estimated net present cost per adverse event ranged from `r dollar(dt_bc_costs$syp)` `r dt_range_np_costs$syp` for syphilis to `r dollar(dt_bc_costs$hcv)` `r dt_range_np_costs$hcv` for HCV. Because most chronic viral infections were not immediately detected, less than 10% of healthcare costs associated with HIV, HBV, and HCV occurred in the first post-transfusion year (Supplementary Table S4). The total net present healthcare costs due to adverse events was `r dt_bc_outcomes_dollar$all_ae.burden_no_prt` `r dt_range_dollar$all_ae.burden_no_prt` without WBPR and `r dt_bc_outcomes_dollar$all_ae.burden_prt` `r dt_range_dollar$all_ae.burden_prt` with WBPR. Of the adverse events evaluated, sepsis infection had only the fourth highest per-case cost at `r dollar(dt_bc_costs$sep)` `r dt_range_np_costs$sep` but represented the majority of healthcare spending due to adverse events without WBPR (`r dt_bc_outcomes[, percent(sep.burden_no_prt/all_ae.burden_no_prt)]`) and the majority of net present healthcare savings due to PI (`r dt_bc_outcomes[, percent(sep.burden_reduced/all_ae.burden_reduced)]`).
+
+> One year of WBPR in Ghana would cost an estimated `r dt_bc_outcomes_dollar$prt_cost` `r dt_range_dollar$prt_cost` and reduce net present healthcare spending by `r dt_bc_outcomes_dollar$all_ae.burden_reduced` `r dt_range_dollar$all_ae.burden_reduced` due to averted adverse events, resulting in an annual net savings of `r dt_bc_outcomes_dollar$net_savings` `r dt_range_dollar$net_savings` (Figure 2). WBPR led to an overall reduction in net present healthcare spending in `r percent(dt_psa_outcomes[net_savings >= 0, .N ]/nrow(dt_psa_outcomes))` of probabilistic sensitivity analysis iterations (Figure 3). Across the `r percent(dt_psa_outcomes[net_savings < 0, .N ]/nrow(dt_psa_outcomes))` iterations where WBPR had a positive net cost, WBPR never cost more than `r dt_psa_outcomes[, dollar(ceiling(max(ICER)))]` per DALY averted.
+
+> In univariate sensitivity analysis, our conclusion that WBPR would be cost-saving was sensitive to eight input parameters (Figure 4). At the low end of our uncertainty range for the probability of clinical sepsis from a bacterially contaminated unit, WBPR had a net present cost of `r dt_univ[rname=="p_clin_sep", dollar(-1*net_savings_low, largest_with_cents = 1e+02)]` annually. At the high end of our uncertainty range for the per-donation cost of WBPR, WBPR had a net present cost of `r dt_univ[rname=="c_PI", dollar(-1*net_savings_high, largest_with_cents = 1e+02)]` annually. For six other parameters, WBPR had a positive net present cost of less than \$1 million annually. The finding that WBPR is cost-effective was not sensitive to any single input parameter over our uncertainty ranges using a willingness to pay of \$2202 per DALY (the 2019 gross national income of Ghana [@WorldBank2021]).
+
+> In a scenario analysis where we accounted for one secondary infection for all HBV, HCV, and HIV-infected recipients, the net present healthcare costs due to adverse events averted by WBPR increased from `r dt_bc_outcomes_dollar$all_ae.burden_reduced` to `r dollar( dt_bc_outcomes$sec_infections_buden_red)` (`r range_sec_infections_buden_red`) annually. In this scenario, WBPR reduced overall healthcare costs in `r percent(dt_psa_outcomes[sec_infections_buden_red > prt_cost, .N]/nrow(dt_psa_outcomes))` of iterations. In the scenario analysis where we excluded benefits related to averting TT-sepsis cases, WBPR was no longer cost-saving. In that scenario, the WBPR led to an overall increase in annual healthcare spending of `r dollar( dt_bc_outcomes$no_sepsis_net_cost)` (`r range_no_sepsis_net_cost`) and had an incremental cost-effectiveness ratio of `r dollar(dt_bc_outcomes$no_sepsis_icer)` (`r range_no_sepsis_icer`) per disability-adjusted life year averted. This cost per DALY averted is similar to Ghana's per capita gross national income (\$2,220 in 2019) [@WorldBank2021].
+
+<br>
+
+# Discussion
+
+> Our study suggests that adding WBPR to the existing blood safety portfolio would substantially reduce the burden of transfusion-associated adverse events in Ghana. WBPR is a very cost-effective intervention and may be cost-saving. We estimated a `r percent(dt_psa_outcomes[net_savings > 0, .N ]/nrow(dt_psa_outcomes))` probability that WBPR would lead to a net reduction in healthcare costs, but this increased to `r percent(dt_psa_outcomes[sec_infections_buden_red > prt_cost, .N]/nrow(dt_psa_outcomes))` when factoring in healthcare costs for secondary transmission of HIV, HBV, and HCV. We took a healthcare payer perspective and did not consider costs such as family caregiver time, productivity loss, or transportation costs. We also did not evaluate all types of adverse events for which WBPR may reduce risk, which could include emerging infectious diseases not yet identified as blood safety threats. Due to these factors, the total societal benefit of WBPR likely exceeds the direct healthcare-related impact as estimated in this analysis.
+
+> Our analysis is the most comprehensive estimation of the burden of transfusion-associated adverse events to date for a sub-Saharan African setting. We developed a new approach to account for subclinical disease and the timing and likelihood of chronic disease detection. This approach, combined with other therapeutic developments such as price reductions for HIV antiviral therapy drugs [@Lee2016a] and greater immunity to HBV through vaccination [@Sarkodie2016], led to lower estimates of the per-exposure costs for TT-HBV, TT-HCV, and TT-HIV events as compared to past analyses of blood safety interventions in sub-Saharan Africa [@Mafirakureva2016; @VanHulst2008; @Custer2017]. To our knowledge, this is the first study to estimate healthcare costs and DALYs lost due to TT-sepsis in a sub-Saharan African setting. We estimated that TT-sepsis is responsible for the majority of morbidity, morbidity, and costs associated with transfusion-associated adverse events in Ghana. The rate of bacterial contamination of blood products varies across African settings, ranging from 0% to 17.9% in a recent systematic review [@Ahmad2021]. Unfortunately, data on clinical outcomes following transfusion of a bacterially contaminated whole blood unit are extremely sparse. Uncertainty in the risk of clinical TT-sepsis following transfusion of a bacterially contaminated whole blood unit was the single largest source of uncertainty in our findings. Even in the scenario of least benefit with no reduction in sepsis by use of WBPR, the cost per DALY averted was similar to the per capita gross national income (GNI) and well below the World Health Organization’s (WHO’s) Choosing Interventions that are Cost-Effective (CHOICE) suggested cost-effectiveness ratio of three times the GNI as a threshold for cost-effective interventions [@Robinson2017].
+
+> Our study has several limitations. Due to lack of data, we did not account for variability in the number of whole blood units transfused per recipient, nor the association between mortality and the number of units transfused. This could lead to an overestimation of the benefits of WBPR if multiply transfused recipients, who are at an elevated risk of transfusion-associated adverse events, have lower baseline expected survival, as has been estimated in other settings [@Russell2019]. Data on the rate of transfusion-associated adverse events in Ghana, and in sub-Saharan Africa generally, are limited. The benefit of WBPR depends on the baseline residual risk of each adverse event, and updated risk estimates using hemovigilance data, if available, could improve estimation. While our detailed micro-costing approach to estimating patterns of clinical resource utilization and associated costs for adverse events was based on local clinical expertise, a rigorous empirical study would enhance precision.
+
+> Our analysis provides further evidence that WBPR is a promising technology for sub-Saharan Africa. Future research could further elucidate the societal impact of WBPR and other blood safety technologies by improving estimation of the burden of illness from transfusion-associated adverse events, estimating other effects beyond direct healthcare spending, and by considering other settings in sub-Saharan Africa.
+
+##### 
+
+# Declarations
+
+**Funding:** This work was supported by Terumo BCT, Inc. (Lakewood, Colorado, USA). Terumo BCT provided no editorial control over the research or the manuscript.
+
+**Acknowledgements:** The authors thank Marion Vermeulen of the South African National Blood Supply for providing unpublished hemovigilance data for syphilis; Dr. Lucy Asamoah-Akuoko of the National Blood Service, Ghana, for providing unpublished data on the percent of whole blood units not transfused; and Nigel Talboys and Eric Mwenda of Terumo BCT, Inc. for providing estimated costs for whole blood pathogen reduction.
+
+**Potential Conflicts of Interest:** WAR received consulting fees from Terumo BCT, Inc. (Lakewood, Colorado, USA) for developing the submitted work. SOO received honoraria from Terumo BCT outside the submitted work. BC reports grants from Grifols Diagnostic Solutions (Barcelona, Spain). Authors AOO, EM, and BN affirm that they have no conflicts.
+
+**Ethics/Consent:** This analysis was based on public data and was exempt from institutional ethics review.
+
+**Data and materials:** All data and materials have been uploaded to a public repository.
+
+**Code availability:** All code has been uploaded to a public repository.
+
+##### 
+
+# References
+
+::: {#refs}
+:::
+
+##### 
+
+::: {custom-style="Compact"}
+| **Table 1** Parameters for modeling the risk of adverse events with and without whole blood pathogen reduction
+:::
+
+`r t_riskmod`
+
+<!---BLOCK_LANDSCAPE_START--->
+
+::: {custom-style="Compact"}
+| **Table 2** Estimated cases and healthcare spending incurred for each adverse event with and without whole blood pathogen reduction for one year. DALY, disability-adjusted life year; WBPR, whole blood pathogen reduction; YLD, years lived with disability; YLL, years of life lost.
+:::
+
+```{r include=FALSE}
+t1 <- flextable(dt_results[c(1:6, 9, 12), c(1, 3:9)])
+t1 <- align(t1, align = "left", part = "all")
+t1 <- set_header_labels(t1, values = list(Value_dist = "Value (range); distribution"))
+t1 <- fontsize(t1, size = 10, part = "all")
+t1 <- font(t1, fontname = "Times", part = "all")
+t1 <- theme_box(t1)
+t1 <- width(t1, 1, 1.3)
+t1 <- width(t1, 2:8, 1.1)
+t1 <- bg(t1, bg = "#EAEAEA", part = "header")
+
+```
+
+`r t1`
+
+<!---BLOCK_LANDSCAPE_STOP--->
+
+![**Fig. 1.** Schematics for Markov models used to estimate net-present lifetime costs for chronic viral infections. Death from other causes possible from any disease state (not shown). Abbreviations AVT, antiviral therapy, CC, compensated cirrhosis, CM, clinical monitored, DCC, decompensated cirrhosis, HCC, hepatocellular carcinoma, HBV, hepatitis B, HCV, hepatitis C, HIV, human immunodeficiency virus, TF, treatment failure, UD, undetected, SC, subclinical](figs/markov_schematics.png)
+
+##### 
+
+![Fig. 2. Estimated net impact on healthcare spending of whole blood pathogen reduction. Net impact is the cost of pathogen reduction minus the net present healthcare savings from averted transfusion-associated adverse events.](figs/net_impact.png)
+
+##### 
+
+![**Fig. 3.** Scatterplot showing the incremental healthcare costs and DALYs averted for WBPR across 10,000 probabilistic sensitivity analysis iterations. WBPR was cost-saving in `r percent(dt_psa_outcomes[net_savings>0, .N/nrow(dt_psa_outcomes)], accuracy = 0.1)` and cost less than \$100 per DALY in `r percent(dt_psa_outcomes[, sum(-1*net_savings/all_ae.DALY_reduced<100)/.N], accuracy = 0.1)` of iterations.](figs/cea_scatter.png)
+
+##### 
+
+![**Fig. 4.** Sensitivity of the net savings of pathogen reduction to changes in the value of individual input parameters within prespecified uncertainty ranges. Y-axis shows all model parameters for which varying the value along the indicated range while keeping other parameters at their base case value led to a variation of more than \$500,000 in the estimated net savings of whole blood pathogen reduction.](figs/tornado.png)
+
+##### 
+
+\setcounter{page}{0}
+
+# Supplemental materials
+
+<br>
+
+# A. Risk model calculations
+
+The following equation was used to calculate the number of cases of each adverse event [AE], with and without WBPR:
+
+$$
+\begin{aligned}
+(\text{[AE] Cases without WBPR}) = &(\text{\# whole blood donations})\times \\
+&(\text{[AE] baseline risk})\times \\
+&(\text{[AE] clinical outcome risk})
+\end{aligned}
+$$ $$
+\begin{aligned}
+\text{[AE] Cases with WBPR} =  &(\text{\# whole blood donations})\times \\
+&(\text{[AE] baseline risk})\times \\
+&(\text{[AE] clinical outcome risk})\times \\
+&(\text{[AE] transmissibility}) \\
+\end{aligned}
+$$ The annual cost of WBPR was calculated as:
+
+$$
+\begin{aligned}
+\text{WBPR cost per case} =  &(\text{\# whole blood donations transfused})\times\\
+&(1 + \text{% donations not transfused})\times\\
+&(\text{PI cost per donation.})
+\end{aligned}
+$$
+
+<br>
+
+# B. Estimation of malaria clinical outcome risk
+
+The risk of clinical malaria infection from the transfusion of a parasitaemic donation was calculated from data in Allain 2016 [@Allain2016]. In that study, the prevalence of parasitemia was 23% (50/217) in recipients and 25% (91/367) in donors. Parasitemia by malaria species was also reported:
+
+-   In donors: 56 had *P falciparum* only; 4 had *P malariae* only; 1 had *P ovale* only; 26 had both *P falciparum* and *P malariae*; and 4 had all 3 species.
+-   In recipients: 48 had *P falciparum* only; 1 had *P malariae* only; 0 had *P ovale* only; 2 had both *P falciparum* and *P malariae*; and 0 had all 3 species.
+
+From these numbers, we calculated the following probabilities:
+
+-   Probability donation has non-falciparum species given that it has malaria: 38.46%
+-   Probability donation has non-malariae species given that it has malaria: 62.64%
+-   Probability donation has non-ovale species given that it has malaria: 94.51%
+-   Probability donation has neither *P falciparum* nor *P malariae* given that it has malaria: 1.10%
+
+From these, the probability that a parasitaemic recipient who is transfused with a parasitaemic donation would receive a species they are not already parasaetimic for was calculated by taking a sum of the probability donations do not have each set of malaria species weighted by the probability that recipients do have each set of malaria species. The result was 37.47%.
+
+The probability of clinical outcomes when a malaria-positive donation is transfused to a non-parasitaemic recipient was reported as 21.6% (8 of 37 transfusions) with a 95% confidence interval of 9.8--38.2%. We assumed that when a parasitaemic donation is transfused to a parasitaemic recipient, the risk of transmission is the same as with a non-parasitaemic recipient when the donation contained a malaria species for which the recipient was not parasitaemic, and the risk of clinical outcomes was 0 when the recipient was already parasitaemic with all malaria species in the donation. Therefore, the estimated clinical outcome risk for a parasitaemic recipient was $21.60\% \times 37.47\% = 8.09\%$. We then calculated the overall expected probability of transmission of a malaria parasitaemic donation by weighting the probability in parasitaemic recipients (8.09%) and the probability in non-parasitaemic recipients (21.60%) by the proportion of recipients who were parasitaemic (23%) for an overall risk of clinical outcomes of 18.5%. For the uncertainty range, we assumed the value could range from 45% to 176% of the base case value based on the range in the confidence interval around the risk of transmission from Allain 2016.
+
+##### 
+
+# Supplemental tables
+
+::: {custom-style="Compact"}
+| **Table S1** Additional parameters used to calculate disability-adjusted life years (DALYs). These parameters were sampled from a PERT distribution in probabilistic sensitivity analysis.
+:::
+
+`r t_daly`
+
+##### 
+
+::: {custom-style="Compact"}
+| **Table S2** Parameters for the micro-costing calculations
+:::
+
+`r t_microcost`
+
+::: {custom-style="hidden_line"}
+| .
+:::
+
+##### 
+
+::: {custom-style="Compact"}
+| **Table S3** Annual transition probabilities used in the Markov models of chronic HIV, HBV, and HCV infections. Transitions indicated by \`\#\` are calculated as one minus the probability of transitioning to any other state.
+:::
+
+`r t_transitions`
+
+##### 
+
+::: {custom-style="Compact"}
+| **Table S4** Calculations used for each disease state (acute illness for sepsis, malaria, febrile non-hemolytic transfusion reactions, and syphilis; annual costs for each disease state in the HBV and HIV Markov models)
+:::
+
+```{r t_calcs, include=FALSE}
+
+dt.t_calcs <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet = "Microcost_eqns"))
+t_calcs <- flextable(dt.t_calcs)
+t_calcs <- fontsize(t_calcs, size = 10, part = "all")
+t_calcs <- font(t_calcs, fontname = "Times", part = "all")
+t_calcs <- theme_box(t_calcs)
+t_calcs <- width(t_calcs, 1, 2.1)
+t_calcs <- width(t_calcs, 2, 4.4)
+t_calcs <- bg(t_calcs, bg = "#EAEAEA", part = "header")
+
+```
+
+`r t_calcs`
+
+##### 
+
+::: {custom-style="Compact"}
+| **Table S5** Calculated annual costs for each disease state in the HIV, HBV, and HCV disease progression Markov models
+:::
+
+```{r t_chronic_disease_states, include=FALSE}
+dt_chronic_disease_states <- fread("../results/chronic_costs_by_disease_state.csv")
+dt_chronic_state_lookup <- data.table(read_excel("../data/Ghana_hea_parameters.xlsx", sheet ="chronic_state_lookup"))
+dt_chronic_disease_states <- dt_chronic_state_lookup[,c("Disease","Disease state", "state_disp")][dt_chronic_disease_states, 
+                                                                                                  on = c("Disease", "Disease state")]
+
+dt_chronic_disease_states[ ,`Disease state` := state_disp]
+dt_chronic_disease_states[ ,state_disp := NULL]
+dt_chronic_disease_states <- melt(dt_chronic_disease_states, id.vars = 1:4)
+
+#dt_chronic_disease_states <- 
+dt_chronic_disease_states <- dcast(dt_chronic_disease_states, Disease+`Disease state`+`Annual cost` ~  variable+Cohort, sep=", ")
+
+
+cols <- colnames(dt_chronic_disease_states)[3:7]
+
+dt_chronic_disease_states[ , (cols) := lapply(.SD, "dollar"), .SDcols=3:7]
+
+dt_chronic_disease_states <- as_grouped_data(dt_chronic_disease_states, groups = c("Disease"))
+
+t_chron_disease_states <- as_flextable(dt_chronic_disease_states)
+
+t_chron_disease_states <- compose(t_chron_disease_states, i = ~ !is.na(Disease), j = "Disease state",
+              value = as_paragraph(as_chunk(Disease)))
+
+t_chron_disease_states <- align(t_chron_disease_states, align = "left", part = "all")
+t_chron_disease_states <- fontsize(t_chron_disease_states, size = 10, part = "all")
+t_chron_disease_states <- font(t_chron_disease_states, fontname = "Times", part = "all")
+t_chron_disease_states <- theme_box(t_chron_disease_states)
+#t_chron_disease_states <- width(t_chron_disease_states, 1, 2.1)
+# t_chron_disease_states <- width(t_chron_disease_states, 2, 4.4)
+t_chron_disease_states <- bg(t_chron_disease_states, bg = "#EAEAEA", part = "header")
+t_chron_disease_states <- width(t_chron_disease_states, 1, 1.7)
+t_chron_disease_states <- width(t_chron_disease_states, 2, 0.8)
+t_chron_disease_states <- width(t_chron_disease_states, 3:6, 1)
+t_chron_disease_states <- bg(t_chron_disease_states, i = c(1, 21, 37), bg = "#DDDDDD", part = "body")
+
+
+
+disease_state_key_hiv <- dt_chronic_state_lookup[Disease == "HIV", paste0(`Disease state`, ", ", state_disp, collapse = "; ")]
+disease_state_key_hbv <- dt_chronic_state_lookup[Disease == "HBV", paste0(`Disease state`, ", ", state_disp, collapse = "; ")]
+disease_state_key_hcv <- dt_chronic_state_lookup[Disease == "HCV", paste0(`Disease state`, ", ", state_disp, collapse = "; ")]
+
+
+```
+
+`r t_chron_disease_states`
+
+<!---BLOCK_LANDSCAPE_START--->
+
+# Supplemental figures
+
+![**Fig. S1.** Transition matrix schematic for HIV. Non-zero transition probabilities are indicated in blue for natural history transitions, yellow for treatment uptake transitions, orange for treatment effectiveness transitions, and green for other-cause mortality. Markov model constructed by first creating a transition matrix without treatment uptake or other-cause death; then adding in treatment uptake transitions while scaling other transitions such that each row still sums to 1; then adding in transitions to other-cause mortality with the same approach. Disease state names: `r disease_state_key_hiv`. Abbreviations: NH, natural history (blue); TU, treatment uptake (marigold); TE, treatment effectiveness (orange); OCM, other cause mortality (green)](figs/hiv_transition_matrix.png)
+
+##### 
+
+![**Fig. S2.** Transition matrix schematic for HBV. Non-zero transition probabilities are indicated in blue for natural history transitions, yellow for treatment uptake transitions, orange for treatment effectiveness transitions, and green for other-cause mortality. Markov model constructed by first creating a transition matrix without treatment uptake or other-cause death; then adding in treatment uptake transitions while scaling other transitions such that each row still sums to 1; then adding in transitions to other-cause mortality with the same approach. Disease state names: `r disease_state_key_hbv`. Abbreviations: NH, natural history (blue); TU, treatment uptake (marigold); TE, treatment effectiveness (orange); OCM, other cause mortality (green)](figs/hbv_transition_matrix.png)
+
+##### 
+
+![**Fig. S3.** Transition matrix schematic for HCV. Non-zero transition probabilities are indicated in blue for natural history transitions, yellow for treatment uptake transitions, orange for treatment effectiveness transitions, and green for other-cause mortality. Markov model constructed by first creating a transition matrix without treatment uptake or other-cause death; then adding in treatment uptake transitions while scaling other transitions such that each row still sums to 1; then adding in transitions to other-cause mortality with the same approach. Disease state names: `r disease_state_key_hcv`. Abbreviations: NH, natural history (blue); TU, treatment uptake (marigold); TE, treatment effectiveness (orange); OCM, other cause mortality (green)](figs/hcv_transition_matrix.png)
+
+<!---BLOCK_LANDSCAPE_STOP--->
+
+![**Fig. S4.** Markov trace plot for HIV pediatric and adult cohorts. Disease state names: `r disease_state_key_hiv`.](figs/hiv_trace.png)
+
+##### 
+
+![**Fig. S5.** Markov trace plot for HBV pediatric and adult cohorts. Disease state names: `r disease_state_key_hbv`.](figs/hbv_trace.png)
+
+##### 
+
+![**Fig. S6.** Markov trace plot for HCV pediatric and adult cohorts. Disease state names: `r disease_state_key_hcv`.](figs/hcv_trace.png)
+
+##### 
+
+![**Fig. S7.** Calibration plots for HIV natural history transition probabilities.](figs/HIV_calib_plot.png)
