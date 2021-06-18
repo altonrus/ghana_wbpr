@@ -178,8 +178,8 @@ fwrite(dt_psa_outcomes, "./results/PSA_outcomes.csv")
 # Univariate sensitivity analysis ###########
 
 #Form datatable with all parameters
-dt_riskmod_params[ , Param_disp := ifelse(is.na(Disease), Parameter, paste0(Disease, " ", Parameter))]
-dt_microcost_params[ , Param_disp := ifelse(Disease=="General", paste0(Category,", ",Parameter), paste0(Disease, " ", Category,", ",Parameter))]
+dt_riskmod_params[ , Param_disp := ifelse(is.na(Disease), Parameter, paste0(Disease, " ", tolower(Parameter)))]
+dt_microcost_params[ , Param_disp := ifelse(Disease=="General", paste0(Category,", ",Parameter), paste0(Disease, " ", tolower(Category),", ",Parameter))]
 dt_transitions[ , rname := paste0("p_",Disease,"_",From,"_",To,"_",Cohort)]
 dt_transitions[ , Param_disp := paste0(Disease, " ", From_disp," to ", To_disp)]
 dt_transitions_params <- dt_transitions[!is.na(Low)]
