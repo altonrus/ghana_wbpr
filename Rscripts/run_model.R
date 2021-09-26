@@ -67,6 +67,34 @@ dt_bc_outcomes <- calc_outcomes(costs_np, dalys_np, params)
 dt_bc_costs <- rbind(unlist(costs_np))
 dt_bc_dalys <- rbind(unlist(dalys_np))
 
+## Sensitivity analysis
+#Secondary infections
+dt_bc_outcomes[ , sec_infections_burden_red := (
+  sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+dt_bc_outcomes[ , sec_infections_net_cost := (
+  prt_cost - sec_infections_burden_red
+)]
+dt_bc_outcomes[ , sec_infections_DALY_reduced := (
+  sep.DALY_reduced+mal.DALY_reduced+ftr.burden_reduced+syp.burden_reduced+
+    2*hiv.burden_reduced+2*hbv.burden_reduced+2*hcv.burden_reduced
+)]
+
+#No TTBI-sepsis
+dt_bc_outcomes[ , no_sepsis_burden_red := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_net_cost := (
+  prt_cost - no_sepsis_burden_red
+)]
+dt_bc_outcomes[ , no_sepsis_DALY_red := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_bc_outcomes[ , no_sepsis_icer := (no_sepsis_net_cost)/no_sepsis_DALY_red]
+
 fwrite(dt_bc_costs, "./results/BC_costs.csv")
 fwrite(dt_bc_dalys, "./results/BC_dalys.csv")
 fwrite(dt_bc_outcomes, "./results/BC_outcomes.csv")
@@ -160,6 +188,35 @@ for(iter in 1:n_iter){
   }
   if (iter %% 100 == 0) {print(paste0("Finished iter ", iter))}
 }
+
+##ADD SCENARIO ANALYSES TO OUTCOMES DATATABLES
+## Sensitivity analysis
+#Secondary infections
+dt_psa_outcomes[ , sec_infections_burden_red := sep.burden_reduced+
+                   mal.burden_reduced+ftr.burden_reduced+
+                   syp.burden_reduced+2*hiv.burden_reduced+
+                   2*hbv.burden_reduced+2*hcv.burden_reduced]
+dt_psa_outcomes[ , sec_infections_net_cost := (
+  prt_cost - sec_infections_burden_red
+)]
+dt_psa_outcomes[ , sec_infections_DALY_red := sep.burden_reduced+
+                   mal.burden_reduced+ftr.burden_reduced+
+                   syp.burden_reduced+2*hiv.burden_reduced+
+                   2*hbv.burden_reduced+2*hcv.burden_reduced]
+
+#No TTBI-sepsis
+dt_psa_outcomes[ , no_sepsis_burden_red := (
+  mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
+    hiv.burden_reduced+hbv.burden_reduced+hcv.burden_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_net_cost := (
+  prt_cost - no_sepsis_burden_red
+)]
+dt_psa_outcomes[ , no_sepsis_DALY_red := (
+  mal.DALY_reduced+ftr.DALY_reduced+syp.DALY_reduced+
+    hiv.DALY_reduced+hbv.DALY_reduced+hcv.DALY_reduced
+)]
+dt_psa_outcomes[ , no_sepsis_icer :=(no_sepsis_net_cost)/no_sepsis_DALY_red]
 
 
 
@@ -320,6 +377,7 @@ ggplot(HIV_trace_both)+
   geom_line(aes(x = Age, y = `Percent of cohort`, color = `Disease state`))+
   geom_point(aes(x = Age, y = `Percent of cohort`, color = `Disease state`), size = 1.2)+
   facet_wrap(vars(cohort), ncol=1)+
+  scale_y_continuous(limits = c(0,1))+
   theme(legend.position = "bottom")
 
 
@@ -411,11 +469,12 @@ ggplot(HCV_trace_both)+
   geom_line(aes(x = Age, y = `Percent of cohort`, color = `Disease state`))+
   geom_point(aes(x = Age, y = `Percent of cohort`, color = `Disease state`), size = 1.2)+
   facet_wrap(vars(cohort), ncol=1)+
+  scale_y_continuous(limits = c(0,1))+
   theme(legend.position = "bottom")
 
 ggsave("./manuscript/figs/hcv_trace.png",
        width=6.5,
-       height = 7,
+       height = 6,
        units="in")
 
 fwrite(HCV_peds_trace, "./results/markov_trace_HCV_peds.csv")
@@ -501,11 +560,12 @@ ggplot(HBV_trace_both)+
   geom_line(aes(x = Age, y = `Percent of cohort`, color = `Disease state`))+
   geom_point(aes(x = Age, y = `Percent of cohort`, color = `Disease state`), size = 1.2)+
   facet_wrap(vars(cohort), ncol=1)+
+  scale_y_continuous(limits = c(0,1))+
   theme(legend.position = "bottom")
 
 ggsave("manuscript/figs/hbv_trace.png",
        width=6.5,
-       height = 7,
+       height = 6,
        units="in")
 fwrite(HBV_peds_trace, "./results/markov_trace_HBV_peds.csv")
 fwrite(HBV_adult_trace, "./results/markov_trace_HBV_peds.csv")

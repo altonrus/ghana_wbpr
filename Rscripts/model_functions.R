@@ -438,6 +438,10 @@ calc_outcomes <- function(costs_np, dalys_np, params,
                           WTP=2202){
   aes <- c("hiv", "sep", "hcv", "hbv",
           "syp", "mal", "ftr")
+  
+  tti_aes <- c("hiv", "sep", "hcv", "hbv",
+                      "syp", "mal")
+  
   outcomes <- list()
   
   outcomes["prt_cost"] <- params$c_PI*(1+params$p_waste)*params$n_comp
@@ -489,6 +493,10 @@ calc_outcomes <- function(costs_np, dalys_np, params,
   dt_outcomes[ , all_ae.cases_no_prt := sum(.SD), .SDcols = paste0(aes,".cases_no_prt")]
   dt_outcomes[ , all_ae.cases_prt := sum(.SD), .SDcols = paste0(aes,".cases_prt")]
   dt_outcomes[ , all_ae.cases_reduced := sum(.SD), .SDcols = paste0(aes,".cases_reduced")]
+  #Cases - TTIs only
+  dt_outcomes[ , all_tti.cases_no_prt := sum(.SD), .SDcols = paste0(tti_aes,".cases_no_prt")]
+  dt_outcomes[ , all_tti.cases_prt := sum(.SD), .SDcols = paste0(tti_aes,".cases_prt")]
+  dt_outcomes[ , all_tti.cases_reduced := sum(.SD), .SDcols = paste0(tti_aes,".cases_reduced")]
   #Costs
   dt_outcomes[ , all_ae.burden_no_prt := sum(.SD), .SDcols = paste0(aes,".burden_no_prt")]
   dt_outcomes[ , all_ae.burden_prt := sum(.SD), .SDcols = paste0(aes,".burden_prt")]
