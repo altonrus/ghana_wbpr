@@ -67,7 +67,7 @@ dt_bc_outcomes <- calc_outcomes(costs_np, dalys_np, params)
 dt_bc_costs <- rbind(unlist(costs_np))
 dt_bc_dalys <- rbind(unlist(dalys_np))
 
-## Sensitivity analysis
+## Scenario analysis
 #Secondary infections
 dt_bc_outcomes[ , sec_infections_burden_red := (
   sep.burden_reduced+mal.burden_reduced+ftr.burden_reduced+syp.burden_reduced+
